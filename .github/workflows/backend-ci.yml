@@ -50,3 +50,23 @@ jobs:
           DB_PASSWORD: postgres
           OPENAI_MOCK_ENABLED: "true"
         run: ./mvnw -B -ntp test
+
+      - name: Print Surefire failure reports
+        if: failure()
+        shell: bash
+        run: |
+          echo "=== Maven Surefire diagnostics ==="
+          if [ -d target/surefire-reports ]; then
+            find target/surefire-reports -type f -name '*.txt' -print -exec cat {} \;
+          else
+            echo "No target/surefire-reports directory was produced."
+          fi
+
+      - name: Upload Surefire reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-reports
+          path: target/surefire-reports/
+          if-no-files-found: ignore
+          retention-days: 7
