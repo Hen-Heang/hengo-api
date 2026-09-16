@@ -1,6 +1,7 @@
 package com.heang.koriaibackend.domain.users.service;
 
 import com.heang.koriaibackend.common.api.Code;
+import com.heang.koriaibackend.common.exception.BusinessException;
 import com.heang.koriaibackend.domain.users.dto.CreateUserRequest;
 import com.heang.koriaibackend.domain.users.dto.UpdatePreferredModelRequest;
 import com.heang.koriaibackend.domain.users.dto.UpdateStudyRemindersRequest;
@@ -31,7 +32,7 @@ public class UserService {
     public User create(CreateUserRequest req) {
         String email = req.email().trim().toLowerCase();
         if (existsByEmail(email)) {
-            throw new IllegalArgumentException(Code.EMAIL_ALREADY_EXISTS.getMessage());
+            throw new BusinessException(Code.EMAIL_ALREADY_EXISTS);
         }
         User user = User.builder()
                 .email(email)

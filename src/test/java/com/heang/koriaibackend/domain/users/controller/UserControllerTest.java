@@ -1,6 +1,8 @@
 package com.heang.koriaibackend.domain.users.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.heang.koriaibackend.common.api.Code;
+import com.heang.koriaibackend.common.exception.BusinessException;
 import com.heang.koriaibackend.domain.users.model.User;
 import com.heang.koriaibackend.domain.users.service.UserService;
 import com.heang.koriaibackend.security.jwt.JwtAuthenticationFilter;
@@ -56,7 +58,6 @@ class UserControllerTest {
 
     @Test
     void create_ShouldReturnUser() throws Exception {
-        when(userService.existsByEmail(any())).thenReturn(false);
         when(userService.create(any())).thenReturn(sampleUser());
 
         mockMvc.perform(post("/api/users")
@@ -76,7 +77,7 @@ class UserControllerTest {
 
     @Test
     void create_WhenEmailExists_ShouldReturnError() throws Exception {
-        when(userService.existsByEmail(any())).thenReturn(true);
+        when(userService.create(any())).thenThrow(new BusinessException(Code.EMAIL_ALREADY_EXISTS));
 
         mockMvc.perform(post("/api/users")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -87,8 +88,9 @@ class UserControllerTest {
                                 "koreanLevel", "BEGINNER",
                                 "preferredModel", "gpt-5-mini"
                         ))))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status.code").value(1101));
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status.code").value(1101))
+                .andExpect(jsonPath("$.data.message").value("Email already exists"));
     }
 
     @Test
