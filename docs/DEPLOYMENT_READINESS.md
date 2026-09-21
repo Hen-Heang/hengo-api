@@ -43,14 +43,25 @@ Example:
 curl -i https://<service-domain>/api/health/ready
 ```
 
+## Datasource configuration
+
+The backend supports multiple environment-variable conventions. Validate the variables actually used by the deployment instead of adding redundant credentials.
+
+- JDBC URL: `DATABASE_URL` first, then `DB_URL`.
+- Username: `DB_USERNAME`, then `DATABASE_USERNAME`, then `PGUSER`.
+- Password: `DB_PASSWORD`, then `DATABASE_PASSWORD`, then `PGPASSWORD`.
+- Railway may provide a single `DATABASE_URL` containing connection details; the application's Railway database URL post-processor can derive credentials from it.
+
+Never copy database credentials into logs, issues, or this runbook when debugging.
+
 ## Failure triage
 
 When readiness is `NOT_READY`, check in this order:
 
 1. Railway PostgreSQL service is running.
-2. `DB_URL`, `DB_USERNAME`, and `DB_PASSWORD` are present for the backend service.
-3. JDBC URL points to the intended PostgreSQL database/environment.
-4. Backend deployment logs contain no datasource authentication, DNS, connection-refused, or timeout errors.
+2. Confirm the backend has a supported datasource configuration: `DATABASE_URL` or `DB_URL`, plus credentials when they are not supplied/derived by the URL. For separate credentials, use one of the supported username/password variable pairs listed above.
+3. Confirm the effective JDBC URL points to the intended PostgreSQL database/environment.
+4. Check backend deployment logs for datasource authentication, DNS, connection-refused, or timeout errors without exposing secret values.
 5. Retry readiness only after the infrastructure/configuration issue is corrected.
 
 ## CI relationship
@@ -60,6 +71,8 @@ GitHub Actions runs the Maven test suite with a PostgreSQL service. CI proves th
 ## Learning note
 
 **Liveness and readiness answer different operational questions.** Liveness asks whether the application process responds. Readiness asks whether the application can currently serve dependency-backed traffic. Keeping these separate prevents traffic from being routed to an app whose JVM is alive while PostgreSQL is unavailable.
+
+**Operational docs should describe the application's real configuration contract.** A runbook that assumes only one environment-variable naming scheme can send debugging in the wrong direction even when the code supports several deployment conventions.
 
 ## Next smallest task
 
